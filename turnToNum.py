@@ -52,7 +52,10 @@ def recipe_vectorization_v2(file_path):
 
 if __name__ == "__main__":
     df = pd.read_csv('recipe.csv')
-    df['ingredients']=turnToGram.process_weight_ratio(df)
-    df['directions'] = revise_directions.clean_directions_nlp(df['directions'])
-    df['new_category_label'] = decreaseFeature.feature_reduction_pipeline(df['category'])
+    #list弄成陣列 map把東西換成bool split切資料
+    doWhat=list(map(bool,input("要做1不做0: 轉重比 步驟 新類別").split()))
+    func_list=[turnToGram.process_weight_ratio,revise_directions.clean_directions_nlp,decreaseFeature.feature_reduction_pipeline]
+    feature_list=['ingredients','directions','new_category_label']
+    for i in range(len(doWhat)):
+        df[feature_list]=func_list[i](df,doWhat[i])
     recipe_vectorization_v2('recipe_reduced_features.csv')

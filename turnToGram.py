@@ -32,7 +32,11 @@ def get_weight(ingredient_str):
     return 0.0
 
 
-def process_weight_ratio(df):
+def process_weight_ratio(df,doWhat):
+    if doWhat==False:
+        allRatio = pd.read_csv('allRatio.csv')
+        return allRatio
+
     print("正在計算材料重量百分比並清洗名稱...")
 
     def calculate_ratio(raw_list_str):
@@ -76,4 +80,5 @@ def process_weight_ratio(df):
         return ", ".join(ratio_strings)
 
     df['ingredients'] = df['ingredients'].apply(calculate_ratio)
+    df['ingredients'].to_csv('allRatio.csv', index=False)
     return df

@@ -9,7 +9,11 @@ import os
 
 # 確保快取路徑一致
 os.environ['HF_HOME'] = "C:/huggingface_cache"
-def feature_reduction_pipeline(df):
+def feature_reduction_pipeline(df,doWhat):
+    if doWhat==False:
+        newFeatures = pd.read_csv('newFeatures.csv')
+        return newFeatures
+
     # 讀取原始資料
     model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -69,11 +73,8 @@ def feature_reduction_pipeline(df):
     df['new_category_label'] = cluster_and_label('category')
 
     # 輸出檔案
-    output_filename = "recipe_reduced_features.csv"
-    df.to_csv(output_filename, index=False)
+    output_filename = "newFeatures.csv"
+    df['new_category_label'].to_csv(output_filename, index=False)
     print(f"\n任務完成！已儲存新特徵檔案至: {output_filename}")
 
-if __name__ == "__main__":
-    # 請確保 recipe.csv 在同目錄
-    feature_reduction_pipeline('recipe.csv')
 #主餐和湯 肉類 甜點 麵包 餅乾

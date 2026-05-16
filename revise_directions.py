@@ -1,12 +1,17 @@
 import re
 import spacy
 from pandas import read_csv
+import pandas as pd
 
 # 1. 極致精簡模式：除了標記詞性(tagger)和還原原形(lemmatizer)所需的組件外，全部排除
 # attribute_ruler 負責處理 token 的屬性映射，是 lemmatizer 的基礎
 nlp = spacy.load("en_core_web_sm", exclude=["parser", "ner", "entity_linker", "textcat"])
 
-def clean_directions_nlp(df_column):
+def clean_directions_nlp(df_column,doWhat):
+    if doWhat==False:
+        newDirection = pd.read_csv('newFeature.csv')
+        return newDirection
+
     # --- 定義替換規則 (術語統一) ---
     term_map = {
         r"\btoss\b": "mix",
@@ -51,4 +56,5 @@ def clean_directions_nlp(df_column):
     except Exception as e:
         print(f"處理過程中發生錯誤: {e}")
 
+    processed_texts.to_csv("newFeature.csv",index=False)
     return processed_texts
