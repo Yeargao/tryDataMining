@@ -11,6 +11,7 @@ INGREDIENT_WEIGHTS = {'egg': 50.0, 'apple': 150.0, 'onion': 110.0, 'garlic': 5.0
 
 
 def get_weight(ingredient_str):
+    """Extract weight from ingredient string."""
     if not isinstance(ingredient_str, str): return 0.0
     text = ingredient_str.lower().strip()
 
@@ -32,14 +33,19 @@ def get_weight(ingredient_str):
     return 0.0
 
 
-def process_weight_ratio(df,doWhat):
-    if doWhat==False:
-        allRatio = pd.read_csv('allRatio.csv')
-        return allRatio
+def process_weight_ratio(df_column, doWhat):
+    """Calculate ingredient weight ratios and clean names."""
+    if doWhat == False:
+        try:
+            allRatio = pd.read_csv('allRatio.csv')
+            return allRatio.iloc[:, 0]  # 返回第一欄作為 Series
+        except:
+            print("警告：無法讀取 allRatio.csv，將重新處理")
 
     print("正在計算材料重量百分比並清洗名稱...")
 
     def calculate_ratio(raw_list_str):
+        """Convert ingredient list to weight ratios."""
         # 1. 清洗字串並切分
         items = re.sub(r"[\[\]']", "", raw_list_str).split(',')
 
@@ -79,6 +85,12 @@ def process_weight_ratio(df,doWhat):
 
         return ", ".join(ratio_strings)
 
-    df['ingredients'] = df['ingredients'].apply(calculate_ratio)
-    df['ingredients'].to_csv('allRatio.csv', index=False)
-    return df
+    # 套用到整個欄位
+    result = df_column.apply(calculate_ratio)
+    
+    # 儲存結果
+    result.to_csv('allRatio.csv', index=False)
+    print(f"已儲存處理結果到 allRatio.csv (共 {len(result)} 筆)")
+    
+    # 返回 Series 格式
+    return pd.Series(result, index=df_column.index)
