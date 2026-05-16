@@ -25,11 +25,14 @@ def feature_reduction_pipeline(df_column, doWhat):
     def cluster_and_label(column_data, column_name):
         print(f"\n--- 正在處理特徵: {column_name} ---")
 
-        # 取得不重複的值，並確保轉為字串 list
-        unique_vals = column_data.astype(str).unique().tolist()
+        # 確保輸入是 Series，將其轉為字串 list
+        if isinstance(column_data, pd.Series):
+            unique_vals = column_data.astype(str).unique().tolist()
+        else:
+            unique_vals = pd.Series(column_data).astype(str).unique().tolist()
 
         print(f"正在生成 {len(unique_vals)} 個不重複項目的嵌入向量...")
-        # 修正點：確保輸入是 list
+        # 確保輸入是 list
         embeddings = model.encode(unique_vals, batch_size=64, show_progress_bar=True)
 
         # 1. HDBSCAN 分群
@@ -72,7 +75,12 @@ def feature_reduction_pipeline(df_column, doWhat):
         # 4. 對應回原資料表
         # 先建立「原始值 -> 新標籤」的映射字典
         val_to_new_name = dict(zip(cluster_map['val'], cluster_map['cluster'].map(new_labels_dict)))
-        mapped_result = column_data.astype(str).map(val_to_new_name)
+        
+        # 確保輸入是 Series 進行 map
+        if isinstance(column_data, pd.Series):
+            mapped_result = column_data.astype(str).map(val_to_new_name)
+        else:
+            mapped_result = pd.Series(column_data).astype(str).map(val_to_new_name)
         
         return mapped_result
 
