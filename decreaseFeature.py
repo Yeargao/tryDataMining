@@ -9,19 +9,24 @@ import os
 
 # 確保快取路徑一致
 os.environ['HF_HOME'] = "C:/huggingface_cache"
-def feature_reduction_pipeline(df,doWhat):
-    if doWhat==False:
-        newFeatures = pd.read_csv('newFeatures.csv')
-        return newFeatures
+
+def feature_reduction_pipeline(df_column, doWhat):
+    """Reduce feature dimensions by clustering similar categories."""
+    if doWhat == False:
+        try:
+            newFeatures = pd.read_csv('newFeatures.csv')
+            return newFeatures.iloc[:, 0]  # 返回第一欄作為 Series
+        except:
+            print("警告：無法讀取 newFeatures.csv，將重新處理")
 
     # 讀取原始資料
     model = SentenceTransformer('all-MiniLM-L6-v2')
 
-    def cluster_and_label(column_name):
+    def cluster_and_label(column_data, column_name):
         print(f"\n--- 正在處理特徵: {column_name} ---")
 
         # 取得不重複的值，並確保轉為字串 list
-        unique_vals = df[column_name].astype(str).unique().tolist()
+        unique_vals = column_data.astype(str).unique().tolist()
 
         print(f"正在生成 {len(unique_vals)} 個不重複項目的嵌入向量...")
         # 修正點：確保輸入是 list
@@ -67,14 +72,18 @@ def feature_reduction_pipeline(df,doWhat):
         # 4. 對應回原資料表
         # 先建立「原始值 -> 新標籤」的映射字典
         val_to_new_name = dict(zip(cluster_map['val'], cluster_map['cluster'].map(new_labels_dict)))
-        return df[column_name].astype(str).map(val_to_new_name)
+        mapped_result = column_data.astype(str).map(val_to_new_name)
+        
+        return mapped_result
 
     # 執行轉化
-    df['new_category_label'] = cluster_and_label('category')
+    result = cluster_and_label(df_column, 'category')
 
     # 輸出檔案
     output_filename = "newFeatures.csv"
-    df['new_category_label'].to_csv(output_filename, index=False)
+    result_df = pd.DataFrame({'new_category_label': result})
+    result_df.to_csv(output_filename, index=False)
     print(f"\n任務完成！已儲存新特徵檔案至: {output_filename}")
 
-#主餐和湯 肉類 甜點 麵包 餅乾
+    # 返回 Series 格式以便賦值給 DataFrame 欄位
+    return pd.Series(result, index=df_column.index)
