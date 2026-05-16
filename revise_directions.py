@@ -41,7 +41,11 @@ def clean_directions_nlp(df_column, doWhat):
     processed_texts = []
 
     print("正在進行初步文本清洗...")
-    cleaned_input = [preprocess_text(t) for t in df_column]
+    # 確保輸入是 Series，將其轉為 list 進行處理
+    if isinstance(df_column, pd.Series):
+        cleaned_input = [preprocess_text(t) for t in df_column.tolist()]
+    else:
+        cleaned_input = [preprocess_text(t) for t in df_column]
 
     # --- 2. 優化批次處理參數 ---
     # batch_size: 降至 200，減少記憶體瞬間壓力
