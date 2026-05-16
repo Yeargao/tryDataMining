@@ -33,6 +33,49 @@ def get_weight(ingredient_str):
     return 0.0
 
 
+def calculate_ratio(raw_list_str):
+    """Convert ingredient list to weight ratios."""
+    if not isinstance(raw_list_str, str): return "Unknown Ratio"
+
+    # 1. 清洗字串並切分
+    items = re.sub(r"[\[\]']", "", raw_list_str).split(',')
+
+    weights = []
+    names = []
+
+    # 建立一個用來移除單位的正規表達式模式
+    unit_pattern = r'\b(' + '|'.join(CONVERSION_FACTORS.keys()) + r')s?\b'
+
+    for i in items:
+        # A. 取得重量
+        w = get_weight(i)
+        weights.append(w)
+
+        # B. 取得乾淨名稱
+        # 1. 轉小寫
+        n = i.lower()
+        # 2. 移除數字 (例如 1/2, 1.5, 10)
+        n = re.sub(r'(\d+\s*/\s*\d+|\d+\.?\d*)', '', n)
+        # 3. 移除單位字眼 (從 CONVERSION_FACTORS 來的)
+        n = re.sub(unit_pattern, '', n)
+        # 4. 移除多餘空白與標點
+        n = n.strip().strip(',').strip()
+
+        names.append(n if n else "unknown")
+
+    # 2. 計算比例
+    total_w = sum(weights)
+    if total_w == 0: return "Unknown Ratio"
+
+    ratio_strings = []
+    for n, w in zip(names, weights):
+        percentage = (w / total_w) * 100
+        # 輸出格式： 只有材料名: 比例%
+        ratio_strings.append(f"{n}: {percentage:.1f}%")
+
+    return ", ".join(ratio_strings)
+
+
 def process_weight_ratio(df_column, doWhat):
     """Calculate ingredient weight ratios and clean names."""
     if doWhat == False:
@@ -44,101 +87,13 @@ def process_weight_ratio(df_column, doWhat):
 
     print("正在計算材料重量百分比並清洗名稱...")
 
-    def calculate_ratio(raw_list_str):
-        """Convert ingredient list to weight ratios."""
-        if not isinstance(raw_list_str, str): return "Unknown Ratio"
-
-        # 1. 清洗字串並切分
-        items = re.sub(r"[\[\]']", "", raw_list_str).split(',')
-
-        weights = []
-        names = []
-
-        # 建立一個用來移除單位的正規表達式模式
-        unit_pattern = r'\b(' + '|'.join(CONVERSION_FACTORS.keys()) + r')s?\b'
-
-        for i in items:
-            # A. 取得重量
-            w = get_weight(i)
-            weights.append(w)
-
-            # B. 取得乾淨名稱
-            n = i.lower()
-            n = re.sub(r'(\d+\s*/\s*\d+|\d+\.?\d*)', '', n)
-            n = re.sub(unit_pattern, '', n)
-            n = n.strip().strip(',').strip()
-
-            names.append(n if n else "unknown")
-
-        # 2. 計算比例
-        total_w = sum(weights)
-        if total_w == 0: return "Unknown Ratio"
-
-        ratio_strings = []
-        for n, w in zip(names, weights):
-            percentage = (w / total_w) * 100
-            ratio_strings.append(f"{n}: {percentage:.1f}%")
-
-        return ", ".join(ratio_strings)
-
-    # 套送到整個傳進來的欄位
+    # 套用到整個傳進來的欄位 (Series)
     processed_results = df_column.apply(calculate_ratio)
-
+    
     # 儲存結果
     result_df = pd.DataFrame({'ratios': processed_results})
     result_df.to_csv('allRatio.csv', index=False)
     print(f"已儲存處理結果到 allRatio.csv (共 {len(processed_results)} 筆)")
 
-    # 直接回傳 Series，帶有原本的 index
+    # 返回 Series 格式以便賦值給 DataFrame 欄位
     return pd.Series(processed_results, index=df_column.index)
-
-    def calculate_ratio(raw_list_str):
-        """Convert ingredient list to weight ratios."""
-        # 1. 清洗字串並切分
-        items = re.sub(r"[\[\]']", "", raw_list_str).split(',')
-
-        weights = []
-        names = []
-
-        # 建立一個用來移除單位的正規表達式模式
-        # 例如: \b(gram|g|kg|cup|...)\b
-        unit_pattern = r'\b(' + '|'.join(CONVERSION_FACTORS.keys()) + r')s?\b'
-
-        for i in items:
-            # A. 取得重量
-            w = get_weight(i)
-            weights.append(w)
-
-            # B. 取得乾淨名稱
-            # 1. 轉小寫
-            n = i.lower()
-            # 2. 移除數字 (例如 1/2, 1.5, 10)
-            n = re.sub(r'(\d+\s*/\s*\d+|\d+\.?\d*)', '', n)
-            # 3. 移除單位字眼 (從 CONVERSION_FACTORS 來的)
-            n = re.sub(unit_pattern, '', n)
-            # 4. 移除多餘空白與標點
-            n = n.strip().strip(',').strip()
-
-            names.append(n if n else "unknown")
-
-        # 2. 計算比例
-        total_w = sum(weights)
-        if total_w == 0: return "Unknown Ratio"
-
-        ratio_strings = []
-        for n, w in zip(names, weights):
-            percentage = (w / total_w) * 100
-            # 輸出格式： 只有材料名: 比例%
-            ratio_strings.append(f"{n}: {percentage:.1f}%")
-
-        return ", ".join(ratio_strings)
-
-    # 套用到整個欄位
-    result = df_column.apply(calculate_ratio)
-    
-    # 儲存結果
-    result.to_csv('allRatio.csv', index=False)
-    print(f"已儲存處理結果到 allRatio.csv (共 {len(result)} 筆)")
-    
-    # 返回 Series 格式
-    return pd.Series(result, index=df_column.index)
