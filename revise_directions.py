@@ -7,10 +7,14 @@ import pandas as pd
 # attribute_ruler 負責處理 token 的屬性映射，是 lemmatizer 的基礎
 nlp = spacy.load("en_core_web_sm", exclude=["parser", "ner", "entity_linker", "textcat"])
 
-def clean_directions_nlp(df_column,doWhat):
-    if doWhat==False:
-        newDirection = pd.read_csv('newFeature.csv')
-        return newDirection
+def clean_directions_nlp(df_column, doWhat):
+    """Extract lemmatized verbs from cooking directions."""
+    if doWhat == False:
+        try:
+            newDirection = pd.read_csv('newFeature.csv')
+            return newDirection.iloc[:, 0]  # 返回第一欄作為 Series
+        except:
+            print("警告：無法讀取 newFeature.csv，將重新處理")
 
     # --- 定義替換規則 (術語統一) ---
     term_map = {
@@ -56,5 +60,10 @@ def clean_directions_nlp(df_column,doWhat):
     except Exception as e:
         print(f"處理過程中發生錯誤: {e}")
 
-    processed_texts.to_csv("newFeature.csv",index=False)
-    return processed_texts
+    # 儲存結果
+    result_df = pd.DataFrame({'directions': processed_texts})
+    result_df.to_csv("newFeature.csv", index=False)
+    print(f"已儲存處理結果到 newFeature.csv (共 {len(processed_texts)} 筆)")
+    
+    # 返回 Series 格式以便賦值給 DataFrame 欄位
+    return pd.Series(processed_texts, index=df_column.index)
