@@ -8,7 +8,8 @@ import turnToGram
 import revise_directions
 import decreaseFeature
 
-def recipe_vectorization_v2(file_path):
+def recipe_vectorization_v2(df):
+    """Convert recipe data to vectors using embeddings and features."""
     model = SentenceTransformer('all-MiniLM-L6-v2')
 
     print("正在將新標籤轉為語義嵌入...")
@@ -48,14 +49,31 @@ def recipe_vectorization_v2(file_path):
 
     vector_df.to_csv("recipe_vectors.csv", index=False)
     print("成功生成包含自定義特徵與權重調整後的向量檔：recipe_vectors.csv")
+    return vector_df
 
 
 if __name__ == "__main__":
     df = pd.read_csv('recipe.csv')
-    #list弄成陣列 map把東西換成bool split切資料
-    doWhat=list(map(bool,input("要做1不做0: 轉重比 步驟 新類別").split()))
-    func_list=[turnToGram.process_weight_ratio,revise_directions.clean_directions_nlp,decreaseFeature.feature_reduction_pipeline]
-    feature_list=['ingredients','directions','new_category_label']
+    # list弄成陣列 map把東西換成bool split切資料
+    doWhat = list(map(bool, input("要做1不做0 (轉重比 步驟 新類別): ").split()))
+    
+    # 定義函數與特徵清單
+    func_list = [
+        turnToGram.process_weight_ratio,
+        revise_directions.clean_directions_nlp,
+        decreaseFeature.feature_reduction_pipeline
+    ]
+    feature_list = ['ingredients', 'directions', 'new_category_label']
+    
+    # 逐一處理三個特徵
     for i in range(len(doWhat)):
-        df[feature_list]=func_list[i](df,doWhat[i])
-    recipe_vectorization_v2('recipe_reduced_features.csv')
+        print(f"\n--- 處理特徵: {feature_list[i]} (doWhat={doWhat[i]}) ---")
+        result = func_list[i](df[feature_list[i]], doWhat[i])
+        df[feature_list[i]] = result
+    
+    # 儲存處理後的資料
+    df.to_csv('recipe_reduced_features.csv', index=False)
+    print("已儲存至 recipe_reduced_features.csv")
+    
+    # 生成最終向量
+    recipe_vectorization_v2(df)
