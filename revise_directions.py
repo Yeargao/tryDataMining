@@ -11,10 +11,10 @@ def clean_directions_nlp(df_column, doWhat):
     """Extract lemmatized verbs from cooking directions."""
     if doWhat == False:
         try:
-            newDirection = pd.read_csv('newFeature.csv')
-            return newDirection.iloc[:, 0]  # 返回第一欄作為 Series
+            newDirections = pd.read_csv('newDirections.csv')
+            return newDirections.iloc[:, 0]  # 返回第一欄作為 Series
         except:
-            print("警告：無法讀取 newFeature.csv，將重新處理")
+            print("警告：無法讀取 newDirections.csv，將重新處理")
 
     # --- 定義替換規則 (術語統一) ---
     term_map = {
@@ -62,8 +62,8 @@ def clean_directions_nlp(df_column, doWhat):
 
     # 儲存結果
     result_df = pd.DataFrame({'directions': processed_texts})
-    result_df.to_csv("newFeature.csv", index=False)
-    print(f"已儲存處理結果到 newFeature.csv (共 {len(processed_texts)} 筆)")
+    result_df.to_csv("newDirections.csv", index=False)
+    print(f"已儲存處理結果到 newDirections.csv (共 {len(processed_texts)} 筆)")
     
     # 返回 Series 格式以便賦值給 DataFrame 欄位
     return pd.Series(processed_texts, index=df_column.index)

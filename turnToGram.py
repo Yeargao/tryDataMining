@@ -46,6 +46,54 @@ def process_weight_ratio(df_column, doWhat):
 
     def calculate_ratio(raw_list_str):
         """Convert ingredient list to weight ratios."""
+        if not isinstance(raw_list_str, str): return "Unknown Ratio"
+
+        # 1. 清洗字串並切分
+        items = re.sub(r"[\[\]']", "", raw_list_str).split(',')
+
+        weights = []
+        names = []
+
+        # 建立一個用來移除單位的正規表達式模式
+        unit_pattern = r'\b(' + '|'.join(CONVERSION_FACTORS.keys()) + r')s?\b'
+
+        for i in items:
+            # A. 取得重量
+            w = get_weight(i)
+            weights.append(w)
+
+            # B. 取得乾淨名稱
+            n = i.lower()
+            n = re.sub(r'(\d+\s*/\s*\d+|\d+\.?\d*)', '', n)
+            n = re.sub(unit_pattern, '', n)
+            n = n.strip().strip(',').strip()
+
+            names.append(n if n else "unknown")
+
+        # 2. 計算比例
+        total_w = sum(weights)
+        if total_w == 0: return "Unknown Ratio"
+
+        ratio_strings = []
+        for n, w in zip(names, weights):
+            percentage = (w / total_w) * 100
+            ratio_strings.append(f"{n}: {percentage:.1f}%")
+
+        return ", ".join(ratio_strings)
+
+    # 套送到整個傳進來的欄位
+    processed_results = df_column.apply(calculate_ratio)
+
+    # 儲存結果
+    result_df = pd.DataFrame({'ratios': processed_results})
+    result_df.to_csv('allRatio.csv', index=False)
+    print(f"已儲存處理結果到 allRatio.csv (共 {len(processed_results)} 筆)")
+
+    # 直接回傳 Series，帶有原本的 index
+    return pd.Series(processed_results, index=df_column.index)
+
+    def calculate_ratio(raw_list_str):
+        """Convert ingredient list to weight ratios."""
         # 1. 清洗字串並切分
         items = re.sub(r"[\[\]']", "", raw_list_str).split(',')
 

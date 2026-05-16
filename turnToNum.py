@@ -7,6 +7,7 @@ import umap
 import turnToGram
 import revise_directions
 import decreaseFeature
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def recipe_vectorization_v2(df):
     """Convert recipe data to vectors using embeddings and features."""
@@ -20,8 +21,11 @@ def recipe_vectorization_v2(df):
     v2_input = df['ingredients'].tolist()
     v2 = model.encode(v2_input, batch_size=64, show_progress_bar=True)
 
+    tfidf = TfidfVectorizer(max_features=100, stop_words='english')
+    v3 = tfidf.fit_transform(df['Description'].fillna(''))
+
     # 合併文字向量並降維
-    text_features = np.hstack([v1, v2])
+    text_features = np.hstack([v1, v2, v3])
     pca = PCA(n_components=128)  # 調整為主成分
     text_reduced = pca.fit_transform(text_features)
 
@@ -52,8 +56,7 @@ def recipe_vectorization_v2(df):
     return vector_df
 
 
-if __name__ == "__main__":
-    df = pd.read_csv('recipe.csv')
+def turnWhat(df):
     # list弄成陣列 map把東西換成bool split切資料
     doWhat = list(map(bool, input("要做1不做0 (轉重比 步驟 新類別): ").split()))
     
